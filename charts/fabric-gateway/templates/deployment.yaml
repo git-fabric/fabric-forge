@@ -18,6 +18,10 @@ spec:
         fabric-sdk/component: gateway
         fabric-sdk/layer: L3
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: gateway
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -54,8 +58,9 @@ spec:
             httpGet:
               path: /health
               port: {{ .Values.config.port }}
-            initialDelaySeconds: 10
+            initialDelaySeconds: 30
             periodSeconds: 30
+            failureThreshold: 5
           readinessProbe:
             httpGet:
               path: /health
