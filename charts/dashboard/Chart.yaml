@@ -1,0 +1,5 @@
+apiVersion: v2
+name: fabric-dashboard
+description: Fabric-SDK control dashboard — OSI layer status, routing lanes, fabric registry
+version: 0.1.0
+appVersion: "0.1.0"

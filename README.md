@@ -73,6 +73,7 @@ kubectl create secret generic gateway-secrets -n fabric-sdk \
 | `charts/redis` | Redis 7.2 Alpine with AOF persistence | 6379 |
 | `charts/fabric-gateway` | SDK gateway with F-RIB, firewall, DNS | 7340 |
 | `charts/fabric-aiana` | AIANA memory fabric, Qdrant-backed, AS65005 | 8100 |
+| `charts/dashboard` | Control dashboard — OSI status, routing lanes, fabric registry | 32500 |
 
 Each chart is independently installable:
 
@@ -81,6 +82,7 @@ helm upgrade --install ollama charts/ollama -n fabric-sdk
 helm upgrade --install redis charts/redis -n fabric-sdk
 helm upgrade --install fabric-gateway charts/fabric-gateway -n fabric-sdk
 helm upgrade --install fabric-aiana charts/fabric-aiana -n fabric-sdk
+helm upgrade --install fabric-dashboard charts/dashboard -n fabric-sdk
 ```
 
 ## Commands

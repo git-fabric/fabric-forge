@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fabric-dashboard
+  labels:
+    app: fabric-dashboard
+    fabric-sdk/component: dashboard
+data:
+  {{- (.Files.Glob "files/*").AsConfig | nindent 2 }}

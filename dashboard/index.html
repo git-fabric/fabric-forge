@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080c0f">
+<title>FABRIC-SDK // CONTROL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #080c0f;
+    --bg2:      #0d1318;
+    --bg3:      #111820;
+    --border:   #1e2d3a;
+    --border2:  #243444;
+    --accent:   #00e5ff;
+    --accent2:  #ff6b00;
+    --accent3:  #39ff14;
+    --text:     #c8d8e8;
+    --text-dim: #4a6070;
+    --text-mid: #7a9aaa;
+    --red:      #ff3b3b;
+    --yellow:   #ffd600;
+    --mono:     'Share Tech Mono', monospace;
+    --sans:     'Barlow Condensed', sans-serif;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bot: env(safe-area-inset-bottom, 0px);
+    --safe-l:   env(safe-area-inset-left, 0px);
+    --safe-r:   env(safe-area-inset-right, 0px);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* scanline overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
+    pointer-events: none; z-index: 1000;
+  }
+
+  /* grid */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── Header ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0.6rem 1rem;
+    padding-top: calc(0.6rem + var(--safe-top));
+    padding-left: calc(1rem + var(--safe-l));
+    padding-right: calc(1rem + var(--safe-r));
+    display: flex; flex-direction: column; gap: 0.4rem;
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; min-height: 32px; }
+  .logo { font-family: var(--sans); font-weight: 900; font-size: 1.2rem; letter-spacing: 0.12em; color: var(--accent); text-transform: uppercase; white-space: nowrap; }
+  .logo-slash { color: var(--text-dim); font-weight: 300; }
+  .header-meta { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .status-pill { display: flex; align-items: center; gap: 0.4rem; font-size: 0.65rem; color: var(--text-mid); letter-spacing: 0.1em; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent3); box-shadow: 0 0 8px var(--accent3); animation: pulse 2s ease-in-out infinite; flex-shrink: 0; }
+  .status-dot.warn { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+  .status-dot.err  { background: var(--red);    box-shadow: 0 0 8px var(--red); }
+  .status-dot.off  { background: var(--text-dim); box-shadow: none; animation: none; }
+  .time-display { font-size: 0.65rem; color: var(--text-dim); letter-spacing: 0.05em; white-space: nowrap; }
+
+  /* ── Layout ── */
+  main { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 1rem; padding-left: calc(1rem + var(--safe-l)); padding-right: calc(1rem + var(--safe-r)); }
+
+  /* ── Stats Bar ── */
+  .stats-bar { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-bottom: 1.5rem; animation: fadeSlideDown 0.6s ease both; }
+  .stat-cell { background: var(--bg2); padding: 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; }
+  .stat-label { font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.2em; text-transform: uppercase; }
+  .stat-value { font-size: 1.3rem; font-family: var(--sans); font-weight: 700; color: var(--accent); letter-spacing: 0.05em; line-height: 1; }
+  .stat-value.green { color: var(--accent3); }
+  .stat-value.orange { color: var(--accent2); }
+  .stat-value.yellow { color: var(--yellow); }
+  .stat-sub { font-size: 0.55rem; color: var(--text-dim); }
+
+  /* ── Section Labels ── */
+  .section-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap; }
+  .section-label { font-family: var(--sans); font-weight: 600; font-size: 0.65rem; letter-spacing: 0.3em; color: var(--text-dim); text-transform: uppercase; white-space: nowrap; }
+  .section-line { flex: 1; height: 1px; background: var(--border); min-width: 2rem; }
+  .section-count { font-size: 0.6rem; color: var(--text-dim); letter-spacing: 0.1em; }
+
+  /* ── Fabric Cards (Uptime Kuma style) ── */
+  .fabric-grid { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+
+  .fabric-card {
+    background: var(--bg2); padding: 1rem 1.25rem;
+    display: flex; flex-direction: column; gap: 0.6rem;
+    position: relative; overflow: hidden;
+    animation: fadeSlideUp 0.5s ease both;
+  }
+  .fabric-card:nth-child(1) { animation-delay: 0.05s }
+  .fabric-card:nth-child(2) { animation-delay: 0.10s }
+  .fabric-card:nth-child(3) { animation-delay: 0.15s }
+  .fabric-card:nth-child(4) { animation-delay: 0.20s }
+
+  .fabric-card::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%;
+    transition: background 0.3s;
+  }
+  .fabric-card[data-status="active"]::before    { background: var(--accent3); }
+  .fabric-card[data-status="degraded"]::before  { background: var(--yellow); }
+  .fabric-card[data-status="withdrawn"]::before { background: var(--red); }
+  .fabric-card[data-status="pending"]::before   { background: var(--text-dim); }
+
+  .fabric-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .fabric-identity { display: flex; align-items: center; gap: 0.75rem; }
+  .fabric-as { font-size: 0.55rem; color: var(--accent); border: 1px solid rgba(0,229,255,0.3); padding: 0.1rem 0.4rem; letter-spacing: 0.1em; white-space: nowrap; }
+  .fabric-name { font-family: var(--sans); font-weight: 700; font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  .fabric-status-badge { font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.15rem 0.5rem; border: 1px solid; white-space: nowrap; }
+  .fabric-status-badge.active    { color: var(--accent3); border-color: var(--accent3); }
+  .fabric-status-badge.degraded  { color: var(--yellow);  border-color: var(--yellow); }
+  .fabric-status-badge.withdrawn { color: var(--red);     border-color: var(--red); }
+  .fabric-status-badge.pending   { color: var(--text-dim); border-color: var(--text-dim); }
+
+  .fabric-desc { font-size: 0.6rem; color: var(--text-dim); letter-spacing: 0.1em; }
+
+  /* heartbeat bar (uptime kuma style) */
+  .heartbeat-row { display: flex; gap: 2px; align-items: flex-end; height: 20px; margin-top: 0.25rem; }
+  .hb-bar { flex: 1; min-width: 3px; max-width: 8px; border-radius: 1px; transition: height 0.3s, background 0.3s; }
+  .hb-bar.up      { background: var(--accent3); }
+  .hb-bar.slow    { background: var(--yellow); }
+  .hb-bar.down    { background: var(--red); }
+  .hb-bar.pending { background: var(--border2); }
+
+  .fabric-meta { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+  .fabric-meta-item { font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.1em; }
+  .fabric-meta-item span { color: var(--text-mid); }
+
+  /* ── Route Prefixes ── */
+  .routes-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .route-tag {
+    font-size: 0.55rem; letter-spacing: 0.08em;
+    padding: 0.15rem 0.5rem;
+    background: var(--bg3); border: 1px solid var(--border2);
+    color: var(--text-mid);
+  }
+  .route-tag.active { border-color: rgba(57,255,20,0.3); color: var(--accent3); }
+
+  /* ── OSI Layer Stack ── */
+  .osi-grid { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+  .osi-row {
+    background: var(--bg2); padding: 0.6rem 1rem;
+    display: flex; align-items: center; gap: 1rem;
+    animation: fadeSlideUp 0.4s ease both;
+  }
+  .osi-row:nth-child(1) { animation-delay: 0.05s }
+  .osi-row:nth-child(2) { animation-delay: 0.10s }
+  .osi-row:nth-child(3) { animation-delay: 0.15s }
+  .osi-row:nth-child(4) { animation-delay: 0.20s }
+  .osi-row:nth-child(5) { animation-delay: 0.25s }
+  .osi-row:nth-child(6) { animation-delay: 0.30s }
+  .osi-row:nth-child(7) { animation-delay: 0.35s }
+
+  .osi-layer { font-family: var(--sans); font-weight: 700; font-size: 0.7rem; color: var(--accent); min-width: 24px; }
+  .osi-name { font-family: var(--sans); font-weight: 600; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; min-width: 100px; }
+  .osi-component { font-size: 0.6rem; color: var(--text-dim); letter-spacing: 0.08em; flex: 1; }
+  .osi-status { display: flex; align-items: center; gap: 0.3rem; }
+
+  /* ── Routing Lanes ── */
+  .lanes-grid { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+  .lane-card { background: var(--bg2); padding: 1rem 1.25rem; animation: fadeSlideUp 0.5s ease both; }
+  .lane-card:nth-child(1) { animation-delay: 0.05s }
+  .lane-card:nth-child(2) { animation-delay: 0.10s }
+  .lane-card:nth-child(3) { animation-delay: 0.15s }
+  .lane-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+  .lane-name { font-family: var(--sans); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase; }
+  .lane-name.deterministic { color: var(--accent3); }
+  .lane-name.local-llm { color: var(--accent); }
+  .lane-name.claude { color: var(--accent2); }
+  .lane-count { font-family: var(--sans); font-weight: 700; font-size: 1.5rem; line-height: 1; }
+  .lane-count.deterministic { color: var(--accent3); }
+  .lane-count.local-llm { color: var(--accent); }
+  .lane-count.claude { color: var(--accent2); }
+  .lane-bar { height: 4px; background: var(--border); margin-top: 0.5rem; position: relative; overflow: hidden; border-radius: 1px; }
+  .lane-fill { position: absolute; top: 0; left: 0; height: 100%; border-radius: 1px; transition: width 1s ease; }
+  .lane-fill.deterministic { background: var(--accent3); }
+  .lane-fill.local-llm { background: var(--accent); }
+  .lane-fill.claude { background: var(--accent2); }
+  .lane-desc { font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.1em; margin-top: 0.4rem; }
+
+  /* ── Terminal ── */
+  .terminal {
+    background: var(--bg2); border: 1px solid var(--border);
+    padding: 0.75rem; font-size: 0.6rem; color: var(--text-mid);
+    line-height: 1.8; max-height: 200px;
+    overflow-y: auto; overflow-x: hidden;
+    animation: fadeSlideUp 0.6s ease 0.3s both;
+    -webkit-overflow-scrolling: touch;
+  }
+  .terminal::-webkit-scrollbar { width: 3px; }
+  .terminal::-webkit-scrollbar-track { background: var(--bg); }
+  .terminal::-webkit-scrollbar-thumb { background: var(--border2); }
+  .log-line { display: flex; gap: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .log-time  { color: var(--text-dim); min-width: 60px; flex-shrink: 0; }
+  .log-level-ok   { color: var(--accent3); min-width: 40px; flex-shrink: 0; }
+  .log-level-warn { color: var(--yellow);  min-width: 40px; flex-shrink: 0; }
+  .log-level-err  { color: var(--red);     min-width: 40px; flex-shrink: 0; }
+  .log-level-route { color: var(--accent); min-width: 40px; flex-shrink: 0; }
+  .log-msg { color: var(--text-mid); overflow: hidden; text-overflow: ellipsis; }
+  .cursor-blink { display: inline-block; width: 7px; height: 10px; background: var(--accent); vertical-align: middle; animation: blink 1s step-end infinite; }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    padding-bottom: calc(0.75rem + var(--safe-bot));
+    display: flex; flex-direction: column; gap: 0.3rem;
+    align-items: center; font-size: 0.55rem;
+    color: var(--text-dim); letter-spacing: 0.1em;
+    margin-top: 2rem; position: relative; z-index: 1; text-align: center;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeSlideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeSlideUp   { from { opacity: 0; transform: translateY(12px); }  to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* ── Responsive ── */
+  @media (min-width: 600px) {
+    header { flex-direction: row; align-items: center; justify-content: space-between; padding: 0 1.5rem; height: 52px; }
+    .header-top { flex: none; }
+    main { padding: 1.5rem; }
+    .stats-bar { grid-template-columns: repeat(3, 1fr); }
+    .lanes-grid { grid-template-columns: repeat(3, 1fr); }
+    .terminal { font-size: 0.65rem; padding: 1rem; }
+    footer { flex-direction: row; justify-content: space-between; }
+  }
+
+  @media (min-width: 900px) {
+    body { cursor: crosshair; }
+    header { padding: 0 2rem; }
+    main { padding: 2rem; }
+    .stats-bar { grid-template-columns: repeat(6, 1fr); }
+    .stat-value { font-size: 1.4rem; }
+    .terminal { font-size: 0.7rem; max-height: 220px; padding: 1rem 1.25rem; }
+  }
+
+  @media (max-width: 379px) {
+    html { font-size: 13px; }
+    .logo { font-size: 1rem; }
+    .stat-value { font-size: 1.1rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo">FABRIC-SDK <span class="logo-slash">//</span> CONTROL</div>
+  </div>
+  <div class="header-meta">
+    <div class="status-pill">
+      <div class="status-dot" id="gateway-dot"></div>
+      <span id="gateway-status-label">CONNECTING...</span>
+    </div>
+    <div class="time-display" id="clock"></div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-cell">
+      <div class="stat-label">Fabrics</div>
+      <div class="stat-value green" id="stat-fabrics">0</div>
+      <div class="stat-sub">registered</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-label">Route Prefixes</div>
+      <div class="stat-value" id="stat-routes">0</div>
+      <div class="stat-sub">in F-RIB</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-label">Deterministic</div>
+      <div class="stat-value green" id="stat-deterministic">0</div>
+      <div class="stat-sub">local hits</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-label">Local LLM</div>
+      <div class="stat-value" id="stat-local-llm">0</div>
+      <div class="stat-sub">ollama routed</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-label">Claude</div>
+      <div class="stat-value orange" id="stat-claude">0</div>
+      <div class="stat-sub">escalations</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-label">Uptime</div>
+      <div class="stat-value green" id="stat-uptime">00:00:00</div>
+      <div class="stat-sub">gateway</div>
+    </div>
+  </div>
+
+  <!-- Routing Lanes -->
+  <div class="section-header">
+    <div class="section-label">Routing Lanes</div>
+    <div class="section-line"></div>
+    <div class="section-count" id="lane-total">0 TOTAL QUERIES</div>
+  </div>
+
+  <div class="lanes-grid" id="lanes-grid">
+    <div class="lane-card">
+      <div class="lane-header">
+        <div class="lane-name deterministic">Deterministic</div>
+        <div class="lane-count deterministic" id="lane-det-count">0</div>
+      </div>
+      <div class="lane-bar"><div class="lane-fill deterministic" id="lane-det-bar" style="width:0%"></div></div>
+      <div class="lane-desc">confidence >= 0.95 // direct execution</div>
+    </div>
+    <div class="lane-card">
+      <div class="lane-header">
+        <div class="lane-name local-llm">Local LLM</div>
+        <div class="lane-count local-llm" id="lane-llm-count">0</div>
+      </div>
+      <div class="lane-bar"><div class="lane-fill local-llm" id="lane-llm-bar" style="width:0%"></div></div>
+      <div class="lane-desc">confidence >= floor // ollama inference</div>
+    </div>
+    <div class="lane-card">
+      <div class="lane-header">
+        <div class="lane-name claude">Claude</div>
+        <div class="lane-count claude" id="lane-claude-count">0</div>
+      </div>
+      <div class="lane-bar"><div class="lane-fill claude" id="lane-claude-bar" style="width:0%"></div></div>
+      <div class="lane-desc">confidence < floor // 0.0.0.0/0 default route</div>
+    </div>
+  </div>
+
+  <!-- Registered Fabrics -->
+  <div class="section-header">
+    <div class="section-label">Registered Fabrics</div>
+    <div class="section-line"></div>
+    <div class="section-count" id="fabric-count">0 PEERS</div>
+  </div>
+
+  <div class="fabric-grid" id="fabric-grid"></div>
+
+  <!-- OSI Stack -->
+  <div class="section-header">
+    <div class="section-label">OSI Layer Status</div>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="osi-grid" id="osi-grid"></div>
+
+  <!-- Activity Log -->
+  <div class="section-header">
+    <div class="section-label">Routing Log</div>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="terminal" id="terminal"></div>
+
+</main>
+
+<footer>
+  <span>FABRIC-SDK v0.1.0 // RY-OPS.DEV</span>
+  <span>BGP-STYLE ROUTING // ZERO WASTED TOKENS</span>
+  <span id="footer-time"></span>
+</footer>
+
+<script>
+// ── Config ────────────────────────────────────────────────
+const GATEWAY_URL = (() => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('gateway') || `http://${window.location.hostname}:7340`;
+})();
+
+let state = {
+  connected: false,
+  fabrics: [],
+  routes: [],
+  audit: [],
+  lanes: { deterministic: 0, 'local-llm': 0, claude: 0 },
+  heartbeats: {},  // fabric_id -> array of {time, ok}
+  startTime: Date.now(),
+};
+
+// ── Clock ─────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const str = now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+  document.getElementById('clock').textContent = str;
+  document.getElementById('footer-time').textContent = str;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Gateway Polling ───────────────────────────────────────
+async function pollGateway() {
+  try {
+    const [health, frib, audit] = await Promise.all([
+      fetch(`${GATEWAY_URL}/health`).then(r => r.json()),
+      fetch(`${GATEWAY_URL}/frib`).then(r => r.json()),
+      fetch(`${GATEWAY_URL}/audit?limit=50`).then(r => r.json()),
+    ]);
+
+    state.connected = true;
+    state.fabrics = frib.sessions || [];
+    state.routes = frib.routes || [];
+    state.audit = audit.entries || [];
+
+    // Count lanes from audit
+    state.lanes = { deterministic: 0, 'local-llm': 0, claude: 0 };
+    state.audit.forEach(e => {
+      if (e.event_type === 'intercept' && e.routing_lane) {
+        state.lanes[e.routing_lane] = (state.lanes[e.routing_lane] || 0) + 1;
+      }
+    });
+
+    // Record heartbeats
+    state.fabrics.forEach(f => {
+      if (!state.heartbeats[f.fabric_id]) state.heartbeats[f.fabric_id] = [];
+      const hb = state.heartbeats[f.fabric_id];
+      hb.push({ time: Date.now(), ok: f.status === 'active' ? 'up' : f.status === 'degraded' ? 'slow' : 'down' });
+      if (hb.length > 30) hb.shift();
+    });
+
+    render();
+  } catch (err) {
+    state.connected = false;
+    renderConnectionStatus();
+  }
+}
+
+// ── Render ────────────────────────────────────────────────
+function render() {
+  renderConnectionStatus();
+  renderStats();
+  renderLanes();
+  renderFabrics();
+  renderOSI();
+  renderTerminal();
+}
+
+function renderConnectionStatus() {
+  const dot = document.getElementById('gateway-dot');
+  const label = document.getElementById('gateway-status-label');
+  if (state.connected) {
+    dot.className = 'status-dot';
+    label.textContent = 'GATEWAY NOMINAL';
+  } else {
+    dot.className = 'status-dot err';
+    label.textContent = 'GATEWAY UNREACHABLE';
+  }
+}
+
+function renderStats() {
+  document.getElementById('stat-fabrics').textContent = state.fabrics.length;
+  document.getElementById('stat-routes').textContent = state.routes.length;
+  document.getElementById('stat-deterministic').textContent = state.lanes.deterministic || 0;
+  document.getElementById('stat-local-llm').textContent = state.lanes['local-llm'] || 0;
+  document.getElementById('stat-claude').textContent = state.lanes.claude || 0;
+
+  const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+  const h = String(Math.floor(elapsed/3600)).padStart(2,'0');
+  const m = String(Math.floor((elapsed%3600)/60)).padStart(2,'0');
+  const s = String(elapsed%60).padStart(2,'0');
+  document.getElementById('stat-uptime').textContent = `${h}:${m}:${s}`;
+}
+
+function renderLanes() {
+  const total = (state.lanes.deterministic || 0) + (state.lanes['local-llm'] || 0) + (state.lanes.claude || 0);
+  document.getElementById('lane-total').textContent = `${total} TOTAL QUERIES`;
+  document.getElementById('lane-det-count').textContent = state.lanes.deterministic || 0;
+  document.getElementById('lane-llm-count').textContent = state.lanes['local-llm'] || 0;
+  document.getElementById('lane-claude-count').textContent = state.lanes.claude || 0;
+
+  if (total > 0) {
+    document.getElementById('lane-det-bar').style.width = `${((state.lanes.deterministic || 0) / total) * 100}%`;
+    document.getElementById('lane-llm-bar').style.width = `${((state.lanes['local-llm'] || 0) / total) * 100}%`;
+    document.getElementById('lane-claude-bar').style.width = `${((state.lanes.claude || 0) / total) * 100}%`;
+  }
+}
+
+function renderFabrics() {
+  const grid = document.getElementById('fabric-grid');
+  document.getElementById('fabric-count').textContent = `${state.fabrics.length} PEERS`;
+
+  if (state.fabrics.length === 0) {
+    grid.innerHTML = `<div class="fabric-card" data-status="pending">
+      <div class="fabric-top"><div class="fabric-identity">
+        <div class="fabric-name" style="color:var(--text-dim)">No fabrics registered</div>
+      </div></div>
+      <div class="fabric-desc">Waiting for fabric registration via POST /register</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = state.fabrics.map((f, i) => {
+    const routes = state.routes.filter(r => r.fabric_id === f.fabric_id);
+    const hb = state.heartbeats[f.fabric_id] || [];
+    // Pad heartbeat to 30 bars
+    const bars = [];
+    for (let j = 0; j < 30; j++) {
+      if (j < hb.length) bars.push(hb[j].ok);
+      else bars.push('pending');
+    }
+
+    return `<div class="fabric-card" data-status="${f.status}" style="animation-delay:${i*0.05+0.05}s">
+      <div class="fabric-top">
+        <div class="fabric-identity">
+          <div class="fabric-as">AS${f.as_number}</div>
+          <div class="fabric-name">${f.fabric_id}</div>
+        </div>
+        <div class="fabric-status-badge ${f.status}">${f.status}</div>
+      </div>
+      <div class="heartbeat-row">
+        ${bars.map(b => {
+          const h = b === 'up' ? 16 + Math.random()*4 : b === 'slow' ? 10 : b === 'down' ? 4 : 3;
+          return `<div class="hb-bar ${b}" style="height:${h}px"></div>`;
+        }).join('')}
+      </div>
+      <div class="fabric-meta">
+        <div class="fabric-meta-item">MCP <span>${f.mcp_endpoint || '—'}</span></div>
+        <div class="fabric-meta-item">Routes <span>${routes.length}</span></div>
+      </div>
+      <div class="routes-list">
+        ${routes.map(r => `<div class="route-tag ${r.worker_health === 'healthy' ? 'active' : ''}">${r.prefix} <span style="color:var(--text-dim)">pref=${r.local_pref}</span></div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderOSI() {
+  const layers = [
+    { l: 'L7', name: 'Application', component: 'Fabric apps (git-steer, SOCIAL, ...)', check: () => state.fabrics.length > 0 },
+    { l: 'L6', name: 'Presentation', component: 'MCP protocol', check: () => state.fabrics.some(f => f.mcp_endpoint) },
+    { l: 'L5', name: 'Session', component: 'AIANA memory (Qdrant Cloud)', check: () => false },
+    { l: 'L4', name: 'Transport', component: 'Interceptor + DNS resolver', check: () => state.connected },
+    { l: 'L3', name: 'Network', component: 'Gateway (F-RIB, Redis)', check: () => state.connected },
+    { l: 'L2', name: 'Data Link', component: 'Firewall (injection, PII)', check: () => state.connected },
+    { l: 'L1', name: 'Physical', component: 'Tailscale (zero trust)', check: () => false },
+  ];
+
+  const grid = document.getElementById('osi-grid');
+  grid.innerHTML = layers.map((layer, i) => {
+    const up = layer.check();
+    return `<div class="osi-row" style="animation-delay:${i*0.05+0.05}s">
+      <div class="osi-layer">${layer.l}</div>
+      <div class="osi-name">${layer.name}</div>
+      <div class="osi-component">${layer.component}</div>
+      <div class="osi-status">
+        <div class="status-dot ${up ? '' : 'off'}" style="width:5px;height:5px"></div>
+        <span style="font-size:0.5rem;color:${up ? 'var(--accent3)' : 'var(--text-dim)'};letter-spacing:0.1em">${up ? 'UP' : 'OFF'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTerminal() {
+  const t = document.getElementById('terminal');
+  const entries = state.audit.slice(0, 30).reverse();
+
+  t.innerHTML = entries.map(e => {
+    const time = new Date(e.timestamp * 1000).toTimeString().slice(0,8);
+    let levelClass = 'log-level-ok';
+    let levelText = e.event_type.toUpperCase().padEnd(10);
+
+    if (e.event_type === 'intercept') {
+      levelClass = e.routing_lane === 'claude' ? 'log-level-warn' : 'log-level-route';
+    } else if (e.event_type === 'withdraw') {
+      levelClass = 'log-level-err';
+    }
+
+    const msg = e.decision || `${e.event_type} fabric=${e.fabric_id || '—'}`;
+
+    return `<div class="log-line">
+      <span class="log-time">[${time}]</span>
+      <span class="${levelClass}">[${e.event_type.slice(0,8).padEnd(8)}]</span>
+      <span class="log-msg">${msg}</span>
+    </div>`;
+  }).join('');
+
+  t.innerHTML += `<div class="log-line"><span class="log-time">[live]</span><span class="log-level-ok"> </span><span class="log-msg"><span class="cursor-blink"></span></span></div>`;
+  t.scrollTop = t.scrollHeight;
+}
+
+// ── Init ──────────────────────────────────────────────────
+renderOSI();
+renderTerminal();
+pollGateway();
+setInterval(pollGateway, 5000);
+setInterval(() => {
+  const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+  const h = String(Math.floor(elapsed/3600)).padStart(2,'0');
+  const m = String(Math.floor((elapsed%3600)/60)).padStart(2,'0');
+  const s = String(elapsed%60).padStart(2,'0');
+  document.getElementById('stat-uptime').textContent = `${h}:${m}:${s}`;
+}, 1000);
+</script>
+</body>
+</html>

@@ -85,6 +85,7 @@ OLLAMA_DEPLOYED=false
 REDIS_DEPLOYED=false
 AIANA_DEPLOYED=false
 GATEWAY_DEPLOYED=false
+DASHBOARD_DEPLOYED=false
 TAILSCALE_DEPLOYED=false
 EOF
     log "State file created: $STATE_FILE"
@@ -134,6 +135,7 @@ install_k3s() {
       --port "8100:8100@loadbalancer" \
       --port "7340:7340@loadbalancer" \
       --port "11434:11434@loadbalancer" \
+      --port "32500:32500@loadbalancer" \
       --k3s-arg "--disable=traefik@server:0" \
       --wait
 
@@ -267,6 +269,23 @@ deploy_gateway() {
   save_state "GATEWAY_DEPLOYED" "true"
 }
 
+deploy_dashboard() {
+  if [ "${DASHBOARD_DEPLOYED:-false}" = "true" ]; then
+    log "Dashboard already deployed -- skipping"
+    return
+  fi
+
+  bold "Phase 6: Dashboard (Control Plane)"
+  echo ""
+
+  helm upgrade --install fabric-dashboard "$SCRIPT_DIR/charts/dashboard" \
+    --namespace fabric-sdk \
+    --wait --timeout 60s
+
+  log "Dashboard available at http://localhost:32500"
+  save_state "DASHBOARD_DEPLOYED" "true"
+}
+
 # ── Status ────────────────────────────────────────────────────────────────────
 
 show_status() {
@@ -285,6 +304,7 @@ show_status() {
   echo ""
 
   echo "Endpoints:"
+  echo "  Dashboard:  http://localhost:32500"
   echo "  Ollama:     http://localhost:11434"
   echo "  Gateway:    http://localhost:7340"
   echo "  AIANA:      http://localhost:8100"
@@ -354,6 +374,7 @@ main() {
   deploy_redis
   deploy_gateway
   deploy_aiana
+  deploy_dashboard
   show_status
 
   echo ""
