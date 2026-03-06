@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#0d1117"/>
+  <g stroke="#3fb950" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Hexagonal fabric mesh -->
+    <path d="M32 8 L50 18 L50 38 L32 48 L14 38 L14 18 Z"/>
+    <path d="M32 8 L32 48"/>
+    <path d="M14 18 L50 38"/>
+    <path d="M50 18 L14 38"/>
+    <!-- Center node -->
+    <circle cx="32" cy="28" r="5" fill="#3fb950" stroke="none"/>
+    <!-- Outer nodes -->
+    <circle cx="32" cy="8" r="3" fill="#58a6ff" stroke="none"/>
+    <circle cx="50" cy="18" r="3" fill="#58a6ff" stroke="none"/>
+    <circle cx="50" cy="38" r="3" fill="#58a6ff" stroke="none"/>
+    <circle cx="32" cy="48" r="3" fill="#58a6ff" stroke="none"/>
+    <circle cx="14" cy="38" r="3" fill="#58a6ff" stroke="none"/>
+    <circle cx="14" cy="18" r="3" fill="#58a6ff" stroke="none"/>
+  </g>
+  <!-- Bottom label bar -->
+  <rect x="8" y="52" width="48" height="8" rx="4" fill="#161b22"/>
+  <text x="32" y="58.5" text-anchor="middle" font-family="system-ui,sans-serif" font-size="5" font-weight="700" fill="#8b949e" letter-spacing="0.5">FABRIC-SDK</text>
+</svg>

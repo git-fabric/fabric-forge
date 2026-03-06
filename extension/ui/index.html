@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fabric-SDK Status</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-card: #161b22;
+    --bg-hover: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #484f58;
+    --green: #3fb950;
+    --green-bg: rgba(63,185,80,0.15);
+    --yellow: #d29922;
+    --yellow-bg: rgba(210,153,34,0.15);
+    --red: #f85149;
+    --red-bg: rgba(248,81,73,0.15);
+    --blue: #58a6ff;
+    --blue-bg: rgba(88,166,255,0.1);
+    --orange: #f0883e;
+    --orange-bg: rgba(240,136,62,0.15);
+    --gray: #484f58;
+    --gray-bg: rgba(72,79,88,0.2);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 15px; -webkit-text-size-adjust: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 24px;
+    text-align: center;
+  }
+  .header-title {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .header-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
+  .header-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  .header-status.up { background: var(--green-bg); color: var(--green); }
+  .header-status.down { background: var(--red-bg); color: var(--red); }
+  .pulse-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  /* ── Container ── */
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+
+  /* ── Overall Uptime Banner ── */
+  .uptime-banner {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .uptime-stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+  }
+  .uptime-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .uptime-stat-value.green { color: var(--green); }
+  .uptime-stat-value.blue { color: var(--blue); }
+  .uptime-stat-value.orange { color: var(--orange); }
+  .uptime-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Monitor Group ── */
+  .monitor-group {
+    margin-bottom: 24px;
+  }
+  .group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius) var(--radius) 0 0;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .group-header:hover { background: var(--bg-hover); }
+  .group-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .group-chevron {
+    width: 16px; height: 16px;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+  }
+  .group-header.collapsed .group-chevron { transform: rotate(-90deg); }
+  .group-header.collapsed { border-radius: var(--radius); }
+  .group-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .group-badge {
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 2px 10px;
+    border-radius: 12px;
+  }
+  .group-badge.all-up { background: var(--green-bg); color: var(--green); }
+  .group-badge.partial { background: var(--yellow-bg); color: var(--yellow); }
+  .group-badge.all-down { background: var(--red-bg); color: var(--red); }
+  .group-badge.pending { background: var(--gray-bg); color: var(--text-muted); }
+
+  .group-body {
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    overflow: hidden;
+  }
+  .group-header.collapsed + .group-body { display: none; }
+
+  /* ── Monitor Row ── */
+  .monitor-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .monitor-row:last-child { border-bottom: none; }
+  .monitor-row:hover { background: var(--bg-hover); }
+
+  .monitor-status-icon {
+    width: 32px; height: 32px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+  }
+  .monitor-status-icon.up { background: var(--green); }
+  .monitor-status-icon.degraded { background: var(--yellow); }
+  .monitor-status-icon.down { background: var(--red); }
+  .monitor-status-icon.off { background: var(--gray); }
+
+  .monitor-info { flex: 1; min-width: 0; }
+  .monitor-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .monitor-detail {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Heartbeat Bar ── */
+  .heartbeat-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .heartbeat-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 24px;
+  }
+  .hb {
+    width: 4px;
+    border-radius: 2px;
+    transition: background 0.2s, height 0.3s;
+  }
+  .hb.up { background: var(--green); height: 24px; }
+  .hb.degraded { background: var(--yellow); height: 16px; }
+  .hb.down { background: var(--red); height: 8px; }
+  .hb.none { background: var(--border); height: 6px; }
+
+  .uptime-pct {
+    font-size: 0.8rem;
+    font-weight: 600;
+    min-width: 52px;
+    text-align: right;
+  }
+  .uptime-pct.good { color: var(--green); }
+  .uptime-pct.warn { color: var(--yellow); }
+  .uptime-pct.bad { color: var(--red); }
+  .uptime-pct.na { color: var(--text-muted); }
+
+  /* ── OSI Layer rows ── */
+  .osi-monitor .monitor-detail code {
+    font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.7rem;
+    background: rgba(110,118,129,0.15);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--text-secondary);
+  }
+
+  /* ── Routing Lane Cards ── */
+  .lanes-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .lane-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+  }
+  .lane-card-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .lane-card-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+  .lane-card-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .lane-card-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.8s ease;
+  }
+  .lane-card-fill.green { background: var(--green); }
+  .lane-card-fill.blue { background: var(--blue); }
+  .lane-card-fill.orange { background: var(--orange); }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    padding: 24px 16px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    border-top: 1px solid var(--border);
+    margin-top: 16px;
+  }
+  .footer a { color: var(--blue); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .container { padding: 16px 12px; }
+    .lanes-row { grid-template-columns: 1fr; }
+    .heartbeat-bar { display: none; }
+    .uptime-banner { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ── Animations ── */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .monitor-group { animation: fadeIn 0.4s ease both; }
+  .monitor-group:nth-child(2) { animation-delay: 0.05s; }
+  .monitor-group:nth-child(3) { animation-delay: 0.1s; }
+  .monitor-group:nth-child(4) { animation-delay: 0.15s; }
+  .monitor-group:nth-child(5) { animation-delay: 0.2s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Fabric-SDK</div>
+  <div class="header-subtitle">BGP-style routing &mdash; zero wasted tokens</div>
+  <div class="header-status down" id="header-status">
+    <div class="pulse-dot"></div>
+    <span id="header-status-text">Connecting...</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Overall Stats -->
+  <div class="uptime-banner" id="uptime-banner">
+    <div class="uptime-stat">
+      <div class="uptime-stat-value green" id="stat-fabrics">0</div>
+      <div class="uptime-stat-label">Fabrics</div>
+    </div>
+    <div class="uptime-stat">
+      <div class="uptime-stat-value blue" id="stat-routes">0</div>
+      <div class="uptime-stat-label">Route Prefixes</div>
+    </div>
+    <div class="uptime-stat">
+      <div class="uptime-stat-value green" id="stat-uptime">100%</div>
+      <div class="uptime-stat-label">Uptime</div>
+    </div>
+    <div class="uptime-stat">
+      <div class="uptime-stat-value blue" id="stat-total-queries">0</div>
+      <div class="uptime-stat-label">Queries</div>
+    </div>
+  </div>
+
+  <!-- Routing Lanes -->
+  <div class="lanes-row" id="lanes-row">
+    <div class="lane-card">
+      <div class="lane-card-value" style="color:var(--green)" id="lane-det">0</div>
+      <div class="lane-card-label">Deterministic</div>
+      <div class="lane-card-bar"><div class="lane-card-fill green" id="lane-det-bar" style="width:0%"></div></div>
+    </div>
+    <div class="lane-card">
+      <div class="lane-card-value" style="color:var(--blue)" id="lane-llm">0</div>
+      <div class="lane-card-label">Local LLM</div>
+      <div class="lane-card-bar"><div class="lane-card-fill blue" id="lane-llm-bar" style="width:0%"></div></div>
+    </div>
+    <div class="lane-card">
+      <div class="lane-card-value" style="color:var(--orange)" id="lane-claude">0</div>
+      <div class="lane-card-label">Claude Escalations</div>
+      <div class="lane-card-bar"><div class="lane-card-fill orange" id="lane-claude-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- OSI Layer Stack -->
+  <div class="monitor-group osi-monitor" id="osi-group">
+    <div class="group-header" onclick="toggleGroup(this)">
+      <div class="group-header-left">
+        <svg class="group-chevron" viewBox="0 0 16 16" fill="currentColor"><path d="M12.78 5.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 6.28a.75.75 0 0 1 1.06-1.06L8 8.94l3.72-3.72a.75.75 0 0 1 1.06 0z"/></svg>
+        <div class="group-title">OSI Layer Stack</div>
+      </div>
+      <div class="group-badge pending" id="osi-badge">7 layers</div>
+    </div>
+    <div class="group-body" id="osi-body"></div>
+  </div>
+
+  <!-- Registered Fabrics -->
+  <div class="monitor-group" id="fabric-group">
+    <div class="group-header" onclick="toggleGroup(this)">
+      <div class="group-header-left">
+        <svg class="group-chevron" viewBox="0 0 16 16" fill="currentColor"><path d="M12.78 5.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 6.28a.75.75 0 0 1 1.06-1.06L8 8.94l3.72-3.72a.75.75 0 0 1 1.06 0z"/></svg>
+        <div class="group-title">Registered Fabrics</div>
+      </div>
+      <div class="group-badge pending" id="fabric-badge">0 peers</div>
+    </div>
+    <div class="group-body" id="fabric-body"></div>
+  </div>
+
+  <!-- Gateway Services -->
+  <div class="monitor-group" id="services-group">
+    <div class="group-header" onclick="toggleGroup(this)">
+      <div class="group-header-left">
+        <svg class="group-chevron" viewBox="0 0 16 16" fill="currentColor"><path d="M12.78 5.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 6.28a.75.75 0 0 1 1.06-1.06L8 8.94l3.72-3.72a.75.75 0 0 1 1.06 0z"/></svg>
+        <div class="group-title">Cluster Services</div>
+      </div>
+      <div class="group-badge pending" id="services-badge">Checking...</div>
+    </div>
+    <div class="group-body" id="services-body"></div>
+  </div>
+
+</div>
+
+<div class="footer">
+  Fabric-SDK v0.1.0 &middot; <a href="https://ry-ops.dev">ry-ops.dev</a> &middot; <span id="clock"></span>
+</div>
+
+<script>
+const GATEWAY_URL = (() => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('gateway') || `http://${window.location.hostname}:7340`;
+})();
+
+const HB_COUNT = 30;
+
+let state = {
+  connected: false,
+  fabrics: [],
+  routes: [],
+  audit: [],
+  lanes: { deterministic: 0, 'local-llm': 0, claude: 0 },
+  heartbeats: {},
+  uptimeTicks: 0,
+  totalTicks: 0,
+};
+
+// ── Clock ──
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Group Toggle ──
+function toggleGroup(header) {
+  header.classList.toggle('collapsed');
+}
+
+// ── Heartbeat Bars HTML ──
+function heartbeatHTML(beats) {
+  const padded = [];
+  for (let i = 0; i < HB_COUNT; i++) {
+    padded.push(i < beats.length ? beats[i] : 'none');
+  }
+  return `<div class="heartbeat-bar">${padded.map(b => `<div class="hb ${b}"></div>`).join('')}</div>`;
+}
+
+function uptimePctHTML(beats) {
+  if (beats.length === 0) return `<div class="uptime-pct na">-</div>`;
+  const up = beats.filter(b => b === 'up').length;
+  const pct = Math.round((up / beats.length) * 100);
+  const cls = pct >= 95 ? 'good' : pct >= 50 ? 'warn' : 'bad';
+  return `<div class="uptime-pct ${cls}">${pct}%</div>`;
+}
+
+// ── Poll Gateway ──
+async function pollGateway() {
+  try {
+    const [health, frib, audit] = await Promise.all([
+      fetch(`${GATEWAY_URL}/health`).then(r => r.json()),
+      fetch(`${GATEWAY_URL}/frib`).then(r => r.json()),
+      fetch(`${GATEWAY_URL}/audit?limit=50`).then(r => r.json()),
+    ]);
+
+    state.connected = true;
+    state.fabrics = frib.sessions || [];
+    state.routes = frib.routes || [];
+    state.audit = audit.entries || [];
+
+    state.lanes = { deterministic: 0, 'local-llm': 0, claude: 0 };
+    state.audit.forEach(e => {
+      if (e.event_type === 'intercept' && e.routing_lane) {
+        state.lanes[e.routing_lane] = (state.lanes[e.routing_lane] || 0) + 1;
+      }
+    });
+
+    state.fabrics.forEach(f => {
+      if (!state.heartbeats[f.fabric_id]) state.heartbeats[f.fabric_id] = [];
+      const hb = state.heartbeats[f.fabric_id];
+      const beat = f.status === 'active' ? 'up' : f.status === 'degraded' ? 'degraded' : 'down';
+      hb.push(beat);
+      if (hb.length > HB_COUNT) hb.shift();
+    });
+
+    state.totalTicks++;
+    state.uptimeTicks++;
+    render();
+  } catch (err) {
+    state.connected = false;
+    state.totalTicks++;
+    renderHeader();
+  }
+}
+
+// ── Render ──
+function render() {
+  renderHeader();
+  renderStats();
+  renderLanes();
+  renderOSI();
+  renderFabrics();
+  renderServices();
+}
+
+function renderHeader() {
+  const el = document.getElementById('header-status');
+  const txt = document.getElementById('header-status-text');
+  if (state.connected) {
+    el.className = 'header-status up';
+    txt.textContent = 'All Systems Operational';
+  } else {
+    el.className = 'header-status down';
+    txt.textContent = 'Gateway Unreachable';
+  }
+}
+
+function renderStats() {
+  document.getElementById('stat-fabrics').textContent = state.fabrics.length;
+  document.getElementById('stat-routes').textContent = state.routes.length;
+  const total = (state.lanes.deterministic || 0) + (state.lanes['local-llm'] || 0) + (state.lanes.claude || 0);
+  document.getElementById('stat-total-queries').textContent = total;
+  const pct = state.totalTicks > 0 ? Math.round((state.uptimeTicks / state.totalTicks) * 100) : 100;
+  document.getElementById('stat-uptime').textContent = pct + '%';
+}
+
+function renderLanes() {
+  const total = (state.lanes.deterministic || 0) + (state.lanes['local-llm'] || 0) + (state.lanes.claude || 0);
+  document.getElementById('lane-det').textContent = state.lanes.deterministic || 0;
+  document.getElementById('lane-llm').textContent = state.lanes['local-llm'] || 0;
+  document.getElementById('lane-claude').textContent = state.lanes.claude || 0;
+
+  if (total > 0) {
+    document.getElementById('lane-det-bar').style.width = `${((state.lanes.deterministic || 0) / total) * 100}%`;
+    document.getElementById('lane-llm-bar').style.width = `${((state.lanes['local-llm'] || 0) / total) * 100}%`;
+    document.getElementById('lane-claude-bar').style.width = `${((state.lanes.claude || 0) / total) * 100}%`;
+  }
+}
+
+function renderOSI() {
+  const layers = [
+    { l: 'L7', name: 'Application', detail: 'Fabric workers (git-steer, social, ...)', check: () => state.fabrics.length > 0 },
+    { l: 'L6', name: 'Presentation', detail: 'MCP Protocol', check: () => state.fabrics.some(f => f.mcp_endpoint) },
+    { l: 'L5', name: 'Session', detail: 'AIANA Memory (Qdrant Cloud)', check: () => false },
+    { l: 'L4', name: 'Transport', detail: 'Interceptor + DNS Resolver', check: () => state.connected },
+    { l: 'L3', name: 'Network', detail: 'Gateway / F-RIB (Redis-backed)', check: () => state.connected },
+    { l: 'L2', name: 'Data Link', detail: 'Firewall (injection / PII filter)', check: () => state.connected },
+    { l: 'L1', name: 'Physical', detail: 'Tailscale (zero-trust mesh)', check: () => false },
+  ];
+
+  const upCount = layers.filter(l => l.check()).length;
+  const badge = document.getElementById('osi-badge');
+  badge.textContent = `${upCount}/${layers.length} up`;
+  badge.className = 'group-badge ' + (upCount === layers.length ? 'all-up' : upCount > 0 ? 'partial' : 'pending');
+
+  document.getElementById('osi-body').innerHTML = layers.map(layer => {
+    const up = layer.check();
+    const status = up ? 'up' : 'off';
+    return `<div class="monitor-row">
+      <div class="monitor-status-icon ${status}">${layer.l}</div>
+      <div class="monitor-info">
+        <div class="monitor-name">${layer.name}</div>
+        <div class="monitor-detail">${layer.detail}</div>
+      </div>
+      <div class="heartbeat-container">
+        <div class="uptime-pct ${up ? 'good' : 'na'}">${up ? 'Up' : 'Off'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderFabrics() {
+  const body = document.getElementById('fabric-body');
+  const badge = document.getElementById('fabric-badge');
+
+  if (state.fabrics.length === 0) {
+    badge.textContent = '0 peers';
+    badge.className = 'group-badge pending';
+    body.innerHTML = `<div class="monitor-row">
+      <div class="monitor-status-icon off">--</div>
+      <div class="monitor-info">
+        <div class="monitor-name" style="color:var(--text-secondary)">No fabrics registered</div>
+        <div class="monitor-detail">Waiting for registration via POST /register</div>
+      </div>
+    </div>`;
+    return;
+  }
+
+  const activeCount = state.fabrics.filter(f => f.status === 'active').length;
+  badge.textContent = `${activeCount}/${state.fabrics.length} up`;
+  badge.className = 'group-badge ' + (activeCount === state.fabrics.length ? 'all-up' : activeCount > 0 ? 'partial' : 'all-down');
+
+  body.innerHTML = state.fabrics.map(f => {
+    const hb = state.heartbeats[f.fabric_id] || [];
+    const routes = state.routes.filter(r => r.fabric_id === f.fabric_id);
+    const status = f.status === 'active' ? 'up' : f.status === 'degraded' ? 'degraded' : 'down';
+
+    return `<div class="monitor-row">
+      <div class="monitor-status-icon ${status}">AS${f.as_number}</div>
+      <div class="monitor-info">
+        <div class="monitor-name">${f.fabric_id}</div>
+        <div class="monitor-detail">${routes.length} route${routes.length !== 1 ? 's' : ''} &middot; ${f.mcp_endpoint || 'no endpoint'}</div>
+      </div>
+      <div class="heartbeat-container">
+        ${heartbeatHTML(hb)}
+        ${uptimePctHTML(hb)}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderServices() {
+  const services = [
+    { name: 'Redis', detail: 'Route cache + session state', port: 6379, up: state.connected },
+    { name: 'Ollama', detail: 'Local LLM inference (qwen2.5-coder:3b)', port: 11434, up: false },
+    { name: 'fabric-gateway', detail: 'F-RIB, interceptor, DNS, firewall', port: 7340, up: state.connected },
+    { name: 'fabric-aiana', detail: 'Semantic memory (Qdrant Cloud)', port: 8100, up: false },
+  ];
+
+  const upCount = services.filter(s => s.up).length;
+  const badge = document.getElementById('services-badge');
+  badge.textContent = `${upCount}/${services.length} up`;
+  badge.className = 'group-badge ' + (upCount === services.length ? 'all-up' : upCount > 0 ? 'partial' : 'all-down');
+
+  document.getElementById('services-body').innerHTML = services.map(s => {
+    const status = s.up ? 'up' : 'off';
+    return `<div class="monitor-row">
+      <div class="monitor-status-icon ${status}">${s.up ? 'UP' : '--'}</div>
+      <div class="monitor-info">
+        <div class="monitor-name">${s.name}</div>
+        <div class="monitor-detail">${s.detail} &middot; port ${s.port}</div>
+      </div>
+      <div class="heartbeat-container">
+        <div class="uptime-pct ${s.up ? 'good' : 'na'}">${s.up ? 'Up' : 'Off'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Init ──
+render();
+pollGateway();
+setInterval(pollGateway, 5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "schema": "0.0.1",
+  "vendor": "git-fabric",
+  "version": "0.1.0",
+  "title": "Fabric-SDK",
+  "description": "BGP-style routing dashboard for Fabric-SDK — zero wasted tokens",
+  "icon": "fabric-sdk.svg",
+  "ui": {
+    "dashboard-tab": {
+      "title": "Fabric-SDK",
+      "root": "/ui",
+      "src": "index.html"
+    }
+  }
+}
