@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fabric-aiana
+  labels:
+    app: fabric-aiana
+    fabric-sdk/component: fabric
+    fabric-sdk/as: "65005"
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.config.port }}
+      protocol: TCP
+  selector:
+    app: fabric-aiana

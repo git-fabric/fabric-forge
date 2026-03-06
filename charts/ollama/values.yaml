@@ -1,0 +1,25 @@
+replicaCount: 1
+
+image:
+  repository: ollama/ollama
+  tag: latest
+  pullPolicy: IfNotPresent
+
+model: "qwen2.5-coder:3b"
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "2Gi"
+  limits:
+    cpu: "2"
+    memory: "4Gi"
+
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: ""
+
+service:
+  type: ClusterIP
+  port: 11434

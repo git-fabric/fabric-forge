@@ -1,0 +1,5 @@
+apiVersion: v2
+name: redis
+description: Redis for Fabric-SDK -- route cache, session state, task bus
+version: 0.1.0
+appVersion: "7.2"

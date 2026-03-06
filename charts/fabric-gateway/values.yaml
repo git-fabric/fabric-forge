@@ -1,0 +1,38 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/git-fabric/sdk-gateway
+  tag: latest
+  pullPolicy: IfNotPresent
+
+config:
+  port: 7340
+  redisUrl: "redis://redis.fabric-sdk:6379"
+  keepaliveIntervalMs: 30000
+  keepaliveMissThreshold: 2
+  keepaliveDeadThreshold: 3
+  dnsCacheTtlS: 300
+  defaultConfidenceFloor: 0.7
+  logLevel: "info"
+
+claude:
+  model: "claude-sonnet-4-20250514"
+  maxTokens: 4096
+  # apiKey set via secret
+
+firewall:
+  enabled: true
+  blockedPrefixes:
+    - "0.0.0.0/0"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+
+service:
+  type: ClusterIP
+  port: 7340

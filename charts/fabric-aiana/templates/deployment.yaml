@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fabric-aiana
+  labels:
+    app: fabric-aiana
+    fabric-sdk/component: fabric
+    fabric-sdk/as: "65005"
+    fabric-sdk/layer: L5-L7
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: fabric-aiana
+  template:
+    metadata:
+      labels:
+        app: fabric-aiana
+        fabric-sdk/component: fabric
+        fabric-sdk/as: "65005"
+        fabric-sdk/layer: L5-L7
+    spec:
+      containers:
+        - name: aiana
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.config.port }}
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "{{ .Values.config.port }}"
+            - name: HOST
+              value: "0.0.0.0"
+            - name: GATEWAY_URL
+              value: "{{ .Values.config.gatewayUrl }}"
+            - name: OLLAMA_ENDPOINT
+              value: "{{ .Values.config.ollamaEndpoint }}"
+            - name: OLLAMA_MODEL
+              value: "{{ .Values.config.ollamaModel }}"
+            - name: QDRANT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: aiana-secrets
+                  key: QDRANT_URL
+            - name: QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aiana-secrets
+                  key: QDRANT_API_KEY
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aiana-secrets
+                  key: OPENAI_API_KEY
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.config.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.config.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10

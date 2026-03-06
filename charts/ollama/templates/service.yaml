@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  labels:
+    app: ollama
+    fabric-sdk/component: llm
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 11434
+      protocol: TCP
+  selector:
+    app: ollama

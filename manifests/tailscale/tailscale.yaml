@@ -1,0 +1,20 @@
+# Tailscale operator placeholder
+# Deploy the official Tailscale Kubernetes operator for L1 zero-trust transport.
+#
+# Install:
+#   helm repo add tailscale https://pkgs.tailscale.com/helmcharts
+#   helm repo update
+#   helm upgrade --install tailscale-operator tailscale/tailscale-operator \
+#     --namespace tailscale --create-namespace \
+#     --set-string oauth.clientId="YOUR_OAUTH_CLIENT_ID" \
+#     --set-string oauth.clientSecret="YOUR_OAUTH_CLIENT_SECRET" \
+#     --wait
+#
+# Then annotate services to expose them on the tailnet:
+#   kubectl annotate svc fabric-gateway -n fabric-sdk \
+#     tailscale.com/expose="true"
+#   kubectl annotate svc fabric-aiana -n fabric-sdk \
+#     tailscale.com/expose="true"
+#
+# This keeps L1 (Tailscale) separate from the Helm charts above.
+# The forge.sh script will prompt for Tailscale setup when ready.

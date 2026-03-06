@@ -1,0 +1,5 @@
+apiVersion: v2
+name: fabric-aiana
+description: Fabric-SDK AIANA -- semantic memory fabric, Qdrant-backed, AS65005
+version: 0.1.0
+appVersion: "0.1.0"

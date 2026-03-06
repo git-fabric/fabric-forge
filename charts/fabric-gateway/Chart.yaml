@@ -1,0 +1,5 @@
+apiVersion: v2
+name: fabric-gateway
+description: Fabric-SDK Gateway -- BGP-style route reflector, F-RIB, DNS resolver, interceptor
+version: 0.1.0
+appVersion: "0.1.0"

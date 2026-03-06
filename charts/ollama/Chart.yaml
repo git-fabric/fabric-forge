@@ -1,0 +1,5 @@
+apiVersion: v2
+name: ollama
+description: Ollama local LLM for Fabric-SDK -- CPU inference with quantized models
+version: 0.1.0
+appVersion: "0.6.0"

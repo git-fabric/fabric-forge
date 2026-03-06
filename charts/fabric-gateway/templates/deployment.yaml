@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fabric-gateway
+  labels:
+    app: fabric-gateway
+    fabric-sdk/component: gateway
+    fabric-sdk/layer: L3
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: fabric-gateway
+  template:
+    metadata:
+      labels:
+        app: fabric-gateway
+        fabric-sdk/component: gateway
+        fabric-sdk/layer: L3
+    spec:
+      containers:
+        - name: gateway
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.config.port }}
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "{{ .Values.config.port }}"
+            - name: REDIS_URL
+              value: "{{ .Values.config.redisUrl }}"
+            - name: KEEPALIVE_INTERVAL_MS
+              value: "{{ .Values.config.keepaliveIntervalMs }}"
+            - name: KEEPALIVE_MISS_THRESHOLD
+              value: "{{ .Values.config.keepaliveMissThreshold }}"
+            - name: KEEPALIVE_DEAD_THRESHOLD
+              value: "{{ .Values.config.keepaliveDeadThreshold }}"
+            - name: DNS_CACHE_TTL_S
+              value: "{{ .Values.config.dnsCacheTtlS }}"
+            - name: DEFAULT_CONFIDENCE_FLOOR
+              value: "{{ .Values.config.defaultConfidenceFloor }}"
+            - name: LOG_LEVEL
+              value: "{{ .Values.config.logLevel }}"
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gateway-secrets
+                  key: ANTHROPIC_API_KEY
+                  optional: true
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.config.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.config.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10

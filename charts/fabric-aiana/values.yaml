@@ -1,0 +1,27 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/git-fabric/sdk-aiana
+  tag: latest
+  pullPolicy: IfNotPresent
+
+config:
+  port: 8100
+  gatewayUrl: "http://fabric-gateway.fabric-sdk:7340"
+  ollamaEndpoint: "http://ollama.fabric-sdk:11434"
+  ollamaModel: "qwen2.5-coder:3b"
+
+# Qdrant + OpenAI credentials via secret: aiana-secrets
+# Required keys: QDRANT_URL, QDRANT_API_KEY, OPENAI_API_KEY
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+
+service:
+  type: ClusterIP
+  port: 8100
