@@ -20,6 +20,10 @@ spec:
         fabric-sdk/as: "65005"
         fabric-sdk/layer: L5-L7
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: aiana
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

@@ -558,11 +558,11 @@ function renderOSI() {
   const layers = [
     { l: 'L7', name: 'Application', detail: 'Fabric workers (git-steer, social, ...)', check: () => state.fabrics.length > 0 },
     { l: 'L6', name: 'Presentation', detail: 'MCP Protocol', check: () => state.fabrics.some(f => f.mcp_endpoint) },
-    { l: 'L5', name: 'Session', detail: 'AIANA Memory (Qdrant Cloud)', check: () => false },
+    { l: 'L5', name: 'Session', detail: 'AIANA Memory (Qdrant)', check: () => state.fabrics.some(f => f.fabric_id === 'fabric-aiana') },
     { l: 'L4', name: 'Transport', detail: 'Interceptor + DNS Resolver', check: () => state.connected },
     { l: 'L3', name: 'Network', detail: 'Gateway / F-RIB (Redis-backed)', check: () => state.connected },
     { l: 'L2', name: 'Data Link', detail: 'Firewall (injection / PII filter)', check: () => state.connected },
-    { l: 'L1', name: 'Physical', detail: 'Tailscale (zero-trust mesh)', check: () => false },
+    { l: 'L1', name: 'Physical', detail: 'Tailscale (zero-trust mesh)', check: () => state.connected },
   ];
 
   const upCount = layers.filter(l => l.check()).length;
@@ -627,11 +627,13 @@ function renderFabrics() {
 }
 
 function renderServices() {
+  const aianaUp = state.fabrics.some(f => f.fabric_id === 'fabric-aiana' && f.status === 'active');
+  const ollamaUp = state.fabrics.some(f => f.ollama_endpoint);
   const services = [
     { name: 'Redis', detail: 'Route cache + session state', port: 6379, up: state.connected },
-    { name: 'Ollama', detail: 'Local LLM inference (qwen2.5-coder:3b)', port: 11434, up: false },
+    { name: 'Ollama', detail: 'Local LLM inference (qwen2.5-coder:3b)', port: 11434, up: ollamaUp },
     { name: 'fabric-gateway', detail: 'F-RIB, interceptor, DNS, firewall', port: 7340, up: state.connected },
-    { name: 'fabric-aiana', detail: 'Semantic memory (Qdrant Cloud)', port: 8100, up: false },
+    { name: 'fabric-aiana', detail: 'Semantic memory (Qdrant)', port: 8100, up: aianaUp },
   ];
 
   const upCount = services.filter(s => s.up).length;

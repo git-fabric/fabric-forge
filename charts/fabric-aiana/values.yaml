@@ -1,9 +1,12 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/git-fabric/sdk-aiana
-  tag: latest
+  repository: ghcr.io/git-fabric/aiana
+  tag: "0.1.0"
   pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: ghcr-creds
 
 config:
   port: 8100
