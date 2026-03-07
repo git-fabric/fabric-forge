@@ -25,7 +25,7 @@ spec:
               ollama serve &
               sleep 5
               ollama pull {{ .Values.model }}
-              kill %1
+              kill %1 2>/dev/null || true
           volumeMounts:
             - name: ollama-data
               mountPath: /root/.ollama

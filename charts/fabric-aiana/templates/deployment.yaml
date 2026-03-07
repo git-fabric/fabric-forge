@@ -57,6 +57,10 @@ spec:
                 secretKeyRef:
                   name: aiana-secrets
                   key: OPENAI_API_KEY
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           livenessProbe:
