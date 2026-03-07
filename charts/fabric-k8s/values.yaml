@@ -1,0 +1,27 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/git-fabric/k8s
+  tag: "0.2.0"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: ghcr-creds
+
+config:
+  port: 8200
+  gatewayUrl: "http://fabric-gateway.fabric-sdk:7340"
+  ollamaEndpoint: "http://ollama.fabric-sdk:11434"
+  ollamaModel: "qwen2.5-coder:3b"
+
+resources:
+  requests:
+    cpu: "50m"
+    memory: "64Mi"
+  limits:
+    cpu: "250m"
+    memory: "192Mi"
+
+service:
+  type: ClusterIP
+  port: 8200

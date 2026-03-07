@@ -1,0 +1,6 @@
+apiVersion: v2
+name: fabric-k8s
+description: Kubernetes operations fabric — 26 MCP tools for cluster management
+type: application
+version: 0.2.0
+appVersion: "0.2.0"
