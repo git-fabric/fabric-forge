@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/banner.svg" alt="fabric-forge: k3s cluster + Helm charts for the Fabric-SDK runtime" width="100%"></p>
+
 # fabric-forge
 
 Forge the fabric. One script, full stack.
@@ -110,3 +112,8 @@ This maps directly to the [Fabric-SDK](https://github.com/git-fabric/sdk) OSI mo
 ## License
 
 MIT
+
+<!-- org-footer -->
+---
+
+<p align="center"><sub>Part of <a href="https://github.com/git-fabric">git-fabric</a> · composable fabric apps for Git-native infrastructure · built by <a href="https://github.com/ry-ops">ry-ops</a></sub></p>
